@@ -1,0 +1,102 @@
+#define USE_ARDUINO_INTERRUPTS true   
+#include <PulseSensorPlayground.h>        
+
+#include<TinyGPS++.h>
+#include<SoftwareSerial.h>
+static const int RXPin=3,TXPin=4;
+int GPSBaud=9600;
+
+TinyGPSPlus gps;
+SoftwareSerial GPS(RXPin,TXPin);
+
+
+
+const int PulseWire = 0;              
+int Threshold = 550; 
+int passcode,password=0;          
+String e_contact="8472043295,8368172611,9369424021";                       
+                               
+PulseSensorPlayground pulseSensor;  
+
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("Set a four digit unique passcode"); 
+  while(Serial.available()==0)
+  {
+    }
+    delay(100);
+    passcode=Serial.parseInt();  
+
+          
+ GPS.begin(GPSBaud);
+
+  pulseSensor.analogInput(PulseWire);        
+  pulseSensor.setThreshold(Threshold);   
+
+   if (pulseSensor.begin()) {
+    Serial.println("Setting gps and Monitoring your heartbeats...: "); 
+  }
+}
+
+
+
+void loop() {
+
+ int myBPM = pulseSensor.getBeatsPerMinute();  
+                                               
+
+if (pulseSensor.sawStartOfBeat()) {             
+ Serial.println("Your heartbeat's "); 
+ Serial.print("BPM: ");                       
+ Serial.print(myBPM);
+ if(myBPM>30 && myBPM<=100)
+ {
+  Serial.println("Normal BPM");                        
+ }
+ else if(myBPM>100)
+ {
+  Serial.println(" Emergency...");
+  
+
+ Serial.println("Enter passcode to cancel");
+  while(Serial.available()==0){
+  }
+  delay(5000);
+ password=Serial.parseInt();
+
+ if(passcode==password)
+ {
+  Serial.println("Cancelled");
+  }
+ else if(password==0 || password!=passcode)
+ {Serial.print("Your emergency contacts are: ");
+  Serial.println(e_contact);
+  Serial.println("Searching Location... ");
+  
+while (GPS.available()>0)
+  {
+    gps.encode(GPS.read());
+    if(gps.location.isUpdated())
+    {
+           
+      Serial.print("latitude= ");
+      Serial.print(gps.location.lat(), 6);
+       Serial.println("Longitude= ");
+       Serial.print(gps.location.lng(),6);
+
+       Serial.println("Alert Sent with location ");    
+    }
+  }
+  
+ }
+ }
+}
+
+  delay(10000);                    
+
+
+}
+
+
+  
